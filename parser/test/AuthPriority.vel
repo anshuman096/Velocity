@@ -1,0 +1,9 @@
+aaa new-model
+#if($localPriority  == 1) 
+  aaa authentication login $method_list_name local $authenticationServerPriority
+#else 
+ aaa authentication login $method_list_name $authenticationServerPriority local
+#end
+line vty 0 4
+login authentication $method_list_name
+

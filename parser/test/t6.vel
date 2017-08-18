@@ -1,0 +1,66 @@
+
+hostname ${HOST_NAME}
+!
+platform console virtual
+!
+ip subnet-zero
+no ip domain-lookup
+ip domain name ${DOMAIN_NAME}
+!
+vrf definition Mgmt-intf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+enable password ${SSH_PASSWORD}
+username ${SSH_USERNAME} password ${SSH_PASSWORD}
+username ${SSH_USERNAME} privilege 15
+!
+crypto key generate rsa modulus 2048
+ip ssh version 2
+ip ssh authentication-retries 5
+ip scp server enable
+file prompt quiet
+!
+interface GigabitEthernet1
+ description management network
+ vrf forwarding Mgmt-intf
+ ip address ${NICID_0_IP_ADDRESS} 255.255.255.0
+ no shut
+!
+interface GigabitEthernet2
+description WAN Network
+ip address ${WAN_IP} ${WAN_MASK}
+no shut
+!
+interface GigabitEthernet3
+description Service Network
+ip address ${SCNET_IP} ${SCNET_MASK}
+no shut
+!
+interface GigabitEthernet4 
+ description VNF Management Network
+ip address ${VNET_IP} ${VNET_MASK}
+no shut
+!
+!
+ip route 0.0.0.0 0.0.0.0 ${WAN_GATEWAY}
+ip route vrf Mgmt-intf 0.0.0.0 0.0.0.0 ${MGMT_GATEWAY}
+!
+line con 0
+stopbits 1
+line vty 0 4
+login local
+privilege level 15
+transport input ssh telnet
+transport output ssh telnet
+!
+snmp-server community public RO
+!
+end
+
+
+

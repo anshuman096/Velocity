@@ -1,0 +1,137 @@
+ip vrf IWAN-SECONDARY
+ rd 65511:102
+ 
+ 
+ crypto ikev2 proposal AES/CBC/256 
+ encryption aes-cbc-256
+ integrity sha512
+ group 14
+ #if ( ${PnPGlobal_HIDDEN} eq "false" )
+ 	crypto ikev2 keyring DMVPN-KEYRING2
+ 	peer ANY
+ 	address 0.0.0.0 0.0.0.0
+ 	pre-shared-key $pre-shared-key
+ #end
+ crypto ikev2 profile FVRF-IKEv2-IWAN-SECONDARY
+ match fvrf IWAN-SECONDARY
+ match identity remote address 0.0.0.0 
+ #if ( ${PnPGlobal_HIDDEN} eq "true" )
+      authentication remote rsa-sig
+      authentication local rsa-sig
+      pki trustpoint sdn-network-infra-iwan
+  #else
+     authentication remote pre-share
+ 	authentication local pre-share
+ 	keyring local DMVPN-KEYRING2
+  #end
+ 
+ crypto ipsec security-association replay window-size 1024
+ 
+ crypto ipsec transform-set AES256/SHA/TRANSPORT esp-aes 256 esp-sha-hmac 
+ mode transport
+ 
+ crypto ipsec profile DMVPN-PROFILE2
+ set transform-set AES256/SHA/TRANSPORT 
+ set ikev2-profile FVRF-IKEv2-IWAN-SECONDARY
+ 
+ interface Loopback0
+ ip address $Loopback-IP $Loopback-Subnet-Mask
+ ip pim sparse-mode
+ 
+ interface Tunnel100 
+ description ** DMVPN Tunnel over Internet **
+ 
+ bandwidth $Internet-WAN-Bandwidth-KBPS
+ 
+ ip address $Tunnel-IP $Tunnel-Subnet-Mask
+ no ip redirects
+ ip mtu 1400
+ ip pim nbma-mode
+ ip pim sparse-mode
+ ip nhrp authentication NhrpAuth
+ ip nhrp map multicast dynamic
+ ip nhrp network-id 102
+ ip nhrp holdtime 600
+ ip nhrp redirect
+ delay 2000
+ ip tcp adjust-mss 1360
+ tunnel source $Internet-WAN-Interface
+ tunnel mode gre multipoint
+ tunnel key 102
+ tunnel vrf IWAN-SECONDARY
+ tunnel protection ipsec profile DMVPN-PROFILE2
+ exit
+ 
+ router bgp $ASN
+ bgp router-id $Loopback-IP
+ bgp log-neighbor-changes 
+ bgp listen range $Internet-Tunnel-Prefix peer-group INET-SPOKES
+ neighbor INET-SPOKES peer-group
+ neighbor INET-SPOKES remote-as $ASN
+ neighbor INET-SPOKES timers 20 60 
+ !
+ address-family ipv4
+  bgp redistribute-internal
+  network  $Tunnel-Subnet  mask $Tunnel-Subnet-Mask 
+  network $Loopback-IP mask $Loopback-Subnet-Mask	 
+  aggregate-address $DC_Prefix_subnet $DC_Prefix_mask summary-only
+  neighbor INET-SPOKES activate
+  neighbor INET-SPOKES send-community
+  neighbor INET-SPOKES route-reflector-client
+  neighbor INET-SPOKES default-originate route-map INET-OUT 
+  neighbor INET-SPOKES route-map INET-OUT out
+  distance bgp 20 109 109
+
+
+ route-map INET-OUT permit 10
+ match ip address prefix-list DC-LOCAL-ROUTES
+ set ip next-hop self
+ set community 10:200
+
+
+ route-map INET-OUT permit 100
+ description readvertise routes learned from DMVPN cloud
+ set community 10:200
+
+  ip route 0.0.0.0 0.0.0.0 $Internet-WAN-Interface 254
+ 
+ ip route vrf IWAN-SECONDARY 0.0.0.0 0.0.0.0 $Internet-WAN-GW-IP
+ 
+ ip access-list extended IWAN_ACL
+ permit ip any host $PI-IP-Address
+ #if($APIC-EM-IP-Address != "")
+ permit ip any host $APIC-EM-IP-Address
+ #end
+ route-map IWAN_RouteMap permit 10
+ match ip address IWAN_ACL
+ set global
+ 
+ ip prefix-list DC-LOCAL-ROUTES seq 10 permit 0.0.0.0/0
+ ip prefix-list DC-LOCAL-ROUTES seq 20 permit $Loopback-IP/32
+ #set ( $stringList = $DC_Prefix.split(",") )
+ #set($Incremental = 30)
+ #foreach ($element in $stringList )
+ ip prefix-list DC-LOCAL-ROUTES seq $Incremental permit $element
+ #set( $Incremental =$Incremental+10)
+ #end
+ #if($Loopback-IP != $Master-Controller-IP)
+ #set ( $ControllerIPAppend = "/32" )
+ #set( $Incremental =$Incremental+10)
+ ip prefix-list DC-LOCAL-ROUTES seq $Incremental permit $Master-Controller-IP$ControllerIPAppend 
+ #end
+ event manager applet _CVD_DMVPN_INTERNET
+ event timer countdown time 2
+ action 1.0 cli command "enable"
+ action 1.1 cli command "config t"
+ action 1.2 cli command "interface $Internet-WAN-Interface"
+ action 1.3 cli command "ip vrf forwarding IWAN-SECONDARY"
+ action 1.4 cli command "ip address $Internet-WAN-IP $Internet-WAN-Subnet-Mask"
+ action 1.5 cli command "ip policy route-map IWAN_RouteMap"
+ action 1.6 cli command "exit"
+ action 1.7 cli command "no event manager applet _CVD_DMVPN_INTERNET"
+ action 1.8 cli command "end"
+ action 1.9 cli command "exit"
+ 
+
+
+

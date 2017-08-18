@@ -1,0 +1,34 @@
+
+##This template is used for Plug and Play Bootstrap using https. It is not recommended to deploy the template directly on device in https.            
+#if($transportprotocol=="HTTPS")
+
+
+yes
+
+#end
+#if($interface_name != "" and $AddressType !="")
+#if($AddressType=="IP Address" and $device_ip != "" and $mask_ip != "")            
+interface ${interface_name}
+ip address ${device_ip} ${mask_ip}
+no shutdown
+exit
+!
+#end
+#if($AddressType=="DHCP")            
+interface ${interface_name}
+ip address dhcp
+exit
+!
+#end
+#end
+#if($destinationprefix != "" and $destinationmask != "" and $forwardingaddress != "")
+ip route $destinationprefix $destinationmask $forwardingaddress
+#end
+pnp profile network-pnp
+#if($transportprotocol=="HTTP")
+transport http ipv4 ${apic_ip} port ${port_number}
+#else
+transport https ipv4 ${apic_ip} port ${port_number}
+#end
+!
+

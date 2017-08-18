@@ -1,0 +1,41 @@
+
+  #if ( ${enablepswdaction} eq "Enable" ) 
+			#if(${enablepswd} != "")
+				#if(${enablepwdlevel} != "" and ${encryptedpwd} == "true" )
+					enable password level ${enablepwdlevel}  7 ${enablepswd}
+				#elseif (${enablepwdlevel} != "")
+					enable password level ${enablepwdlevel} ${enablepswd}
+				#elseif (${encryptedpwd} == "true" )
+					enable password 7 ${enablepswd}
+				#else
+					enable password ${enablepswd}
+				#end	
+	       #end
+  #elseif ( ${enablepswdaction} eq "Disable" ) 			
+			#if (${enablepwdlevel} != "")
+				no enable password level ${enablepwdlevel}			
+			#else
+			    no enable password
+			#end	
+  #end
+ #if ( ${enable_secret} eq "Enable" ) 
+		#if(${secretpassword} != "")
+			#if(${secretlevel} != "" and ${encrypted} == "true" )
+				enable secret level ${secretlevel}  5 ${secretpassword}
+			#elseif ( ${secretlevel} != "")
+				enable secret level ${secretlevel} ${secretpassword}
+			#elseif (${encrypted} == "true" )
+				enable secret 5 ${secretpassword}
+			#else
+				enable secret ${secretpassword}
+			#end	
+		#end
+  #elseif ( ${enable_secret} eq "Disable" ) 			
+			#if (${secretlevel} != "")
+				no enable secret level ${secretlevel}			
+			#else
+			    no secret password
+			#end	
+  #end
+ 
+

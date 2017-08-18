@@ -1,0 +1,180 @@
+ip vrf IWAN-PRIMARY
+ rd 65511:101
+
+ip vrf IWAN-SECONDARY
+ rd 65511:102
+
+
+crypto ikev2 proposal AES/CBC/256 
+ encryption aes-cbc-256
+ integrity sha512
+ group 14
+ 
+crypto ikev2 keyring DMVPN-KEYRING1
+ peer ANY
+ address 0.0.0.0 0.0.0.0
+ pre-shared-key $pre-shared-key
+ crypto ikev2 keyring DMVPN-KEYRING2
+ peer ANY
+ address 0.0.0.0 0.0.0.0
+ pre-shared-key $pre-shared-key
+
+crypto ikev2 profile FVRF-IKEv2-IWAN-PRIMARY
+ match fvrf IWAN-PRIMARY
+ match identity remote address 0.0.0.0
+
+     authentication remote pre-share
+    authentication local pre-share
+    keyring local DMVPN-KEYRING1
+
+crypto ikev2 profile FVRF-IKEv2-IWAN-SECONDARY
+ match fvrf IWAN-SECONDARY
+ match identity remote address 0.0.0.0 
+
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local DMVPN-KEYRING2
+
+crypto ikev2 dpd 40 5 on-demand
+
+crypto ipsec security-association replay window-size 1024
+
+crypto ipsec transform-set AES256/SHA/TRANSPORT esp-aes 256 esp-sha-hmac 
+ mode transport
+
+crypto ipsec profile DMVPN-PROFILE1
+ set transform-set AES256/SHA/TRANSPORT 
+ set ikev2-profile FVRF-IKEv2-IWAN-PRIMARY
+
+crypto ipsec profile DMVPN-PROFILE2
+ set transform-set AES256/SHA/TRANSPORT 
+ set ikev2-profile FVRF-IKEv2-IWAN-SECONDARY
+exit 
+
+interface Loopback0
+ ip address $Loopback-IP 255.255.255.255
+ ip pim sparse-mode
+
+interface Tunnel100
+description ** DMVPN tunnel for Internet ** 
+
+bandwidth $Internet-WAN-Bandwidth-KBPS
+
+ip address $Internet-Tunnel-IP $Internet-Tunnel-Subnet-Mask
+no ip redirects
+ ip mtu 1400
+ ip pim dr-priority 0
+ ip pim sparse-mode
+ ip nhrp authentication NhrpAuth
+ip nhrp map multicast $Internet-Hub-WAN-IP
+ip nhrp map $Internet-Hub-Tunnel-IP $Internet-Hub-WAN-IP
+ ip nhrp network-id 102
+ ip nhrp holdtime 600
+ ip nhrp nhs $Internet-Hub-Tunnel-IP
+ ip nhrp nhs cluster 0 max-connections 1
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip tcp adjust-mss 1360
+ tunnel source $Internet-WAN-Interface
+ tunnel mode gre multipoint
+ tunnel key 102
+ tunnel vrf IWAN-SECONDARY
+ tunnel protection ipsec profile DMVPN-PROFILE2
+no shut
+
+interface Tunnel200
+description ** DMVPN Tunnel over MPLS ** 
+
+bandwidth $MPLS-WAN-Bandwidth-KBPS
+
+ip address $MPLS-Tunnel-IP $MPLS-Tunnel-Subnet-Mask
+ no ip redirects
+ ip mtu 1400
+ ip pim dr-priority 0
+ ip pim sparse-mode
+ ip nhrp authentication NhrpAuth
+ip nhrp map multicast $MPLS-Hub-WAN-IP
+ip nhrp map $MPLS-Hub-Tunnel-IP $MPLS-Hub-WAN-IP
+ ip nhrp network-id 101
+ ip nhrp holdtime 600
+ ip nhrp nhs $MPLS-Hub-Tunnel-IP
+ ip nhrp nhs cluster 0 max-connections 1
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip tcp adjust-mss 1360
+ tunnel source $MPLS-WAN-Interface
+ tunnel mode gre multipoint
+ tunnel key 101
+ tunnel vrf IWAN-PRIMARY
+ tunnel protection ipsec profile DMVPN-PROFILE1
+no shut
+
+router eigrp IWAN-EIGRP
+
+ address-family ipv4 unicast autonomous-system 400
+
+  af-interface default
+   passive-interface
+  exit-af-interface
+
+  af-interface Tunnel200
+
+
+   summary-address $LAN-Subnet $LAN-Subnet-Mask
+   hello-interval 20
+   hold-time 60
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel100
+
+
+   summary-address $LAN-Subnet $LAN-Subnet-Mask
+   hello-interval 20
+   hold-time 60
+   no passive-interface
+  exit-af-interface
+  
+  topology base
+  exit-af-topology
+
+
+network $Internet-Tunnel-Subnet  $Internet-Tunnel-Subnet-Mask
+network $MPLS-Tunnel-Subnet  $MPLS-Tunnel-Subnet-Mask
+
+  network $LAN-Subnet $LAN-Subnet-Mask
+  network $Loopback-IP $Loopback-Subnet-Mask
+  eigrp router-id $Loopback-IP
+  eigrp stub connected summary
+ exit-address-family
+
+ip route vrf IWAN-PRIMARY 0.0.0.0 0.0.0.0 $MPLS-WAN-GW-IP
+ip route vrf IWAN-SECONDARY 0.0.0.0 0.0.0.0 $Internet-WAN-GW-IP
+
+
+
+event manager applet _CVD_DMVPN
+event timer countdown time 2
+action 1.0 cli command "enable"
+action 1.1 cli command "config t"
+action 1.2 cli command "interface $MPLS-WAN-Interface"
+action 1.3 cli command "ip vrf forwarding IWAN-PRIMARY"
+action 1.4 cli command "ip address $MPLS-WAN-IP $MPLS-WAN-Subnet-Mask"
+action 1.5 cli command "duplex auto"
+action 1.6 cli command "speed auto"
+action 1.7 cli command "exit"
+action 1.8 cli command "interface $Internet-WAN-Interface"
+action 1.9 cli command "ip vrf forwarding IWAN-SECONDARY"
+action 2.0 cli command "ip address $Internet-WAN-IP $Internet-WAN-Subnet-Mask"
+action 2.1 cli command "duplex auto"
+action 2.2 cli command "speed auto"
+action 2.3 cli command "no cdp enable"
+action 2.4 cli command "exit"
+action 2.5 cli command "no event manager applet _CVD_DMVPN"
+action 2.6 cli command "end"
+action 2.7 cli command "exit"
+        
+
+
+
+

@@ -1,0 +1,23 @@
+interface Loopback0
+ ip address $Loopback-IP $Loopback-Subnet-Mask
+ exit
+ 
+ #set ( $stringList = $DC_Prefix.split(",") )
+ #set($Incremental = 10)
+ #foreach ($element in $stringList )
+ ip prefix-list DC_Prefix seq $Incremental permit $element 
+ #set( $Incremental = $Incremental+10)
+ #end
+ domain IWAN
+ vrf default
+ master transit 1
+ source-interface Loopback0
+ site-prefixes prefix-list DC_Prefix
+ password $PfR-Auth-Password
+ HUB $Master-Controller-IP
+ 
+ 
+ 
+
+
+

@@ -1,0 +1,51 @@
+
+
+#if ( ${aaanewmodel} == "Enable" )
+ aaa new-model
+#end
+#if ( ${aaaaction} == "Enable" )
+	#if ( $method1 eq "tacacs plus" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group tacacs+ group tacacs+
+	#elseif ( $method1 eq "radius" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group radius group radius
+	#elseif ( $method1 eq "tacacs plus" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group tacacs+ group radius
+	#elseif ( $method1 eq "radius" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group radius group tacacs+
+	#elseif ( $method1 eq "tacacs plus" and $method2 eq "none" )
+		aaa authorization auth-proxy default group tacacs+ 
+	#elseif ( $method1 eq "radius" and $method2 eq "none" )
+		aaa authorization auth-proxy default group radius 
+	#elseif ( $method1 eq "none" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group tacacs+
+	#elseif ( $method1 eq "none" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group radius
+	#end
+#elseif ( ${aaaaction} == "Disable" )
+no aaa authorization auth-proxy default 
+no ip auth-proxy
+#end
+#if( ${inactivitytimer} != "" )
+ip auth-proxy inactivity-timer ${inactivitytimer}
+#end
+#if ( ${banneraction} == "Enable" )
+#if(${BannerText} != "")
+#end
+#elseif ( ${banneraction} == "Disable" )
+no ip auth-proxy auth-proxy-banner http
+#end
+#if ( ${authproxyrule} == "Enable" )
+#if(${proxyname} != "" and ${authoverridetimeout} != "" and ${ACLname}!= "")
+ip auth-proxy name ${proxyname} http auth-cache-time ${authoverridetimeout} list ${ACLname}
+#end
+#elseif ( ${authproxyrule} == "Disable" )
+#if(${proxyname} != "" and ${authoverridetimeout} != "" and ${ACLname} != "")
+no ip auth-proxy name ${proxyname} http auth-cache-time ${authoverridetimeout} list ${ACLname}
+#end
+#end
+#if ( ${aaanewmodel} == "Disable" )
+no aaa new-model
+#end
+
+
+

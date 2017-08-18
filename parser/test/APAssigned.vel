@@ -1,0 +1,16 @@
+exit
+#set ($apNames=$apNameList.split(","))
+terminal width 0
+#foreach ($apName in $apNames)
+  ap name $apName controller primary $primaryControllerName $primaryControllerIpAddress
+  #if($secondaryControllerName != "" && $secondaryControllerIpAddress != "")
+  ap name $apName controller secondary $secondaryControllerName $secondaryControllerIpAddress
+  #end
+  #if($tertiaryControllerName != "" && $tertiaryControllerIpAddress != "")
+  ap name $apName controller tertiary $tertiaryControllerName $tertiaryControllerIpAddress
+  #end
+#end
+config t
+
+
+

@@ -1,0 +1,24 @@
+#parse ("file.html")
+#set ($A = "ABC")
+
+#set ($B = $A)
+
+interface ethernet $A
+        speed $B
+
+#if ( $A == $B) 
+        #if ($B <= $C)
+              #if ($D >= $E)
+                      #set ($D=$Q)
+              #end
+        #else
+              #if ($T == $Q)
+                      #set ($Q= "FooBar")
+              #end
+        #end         
+#elseif ($A == $C)
+     #set ($myList = ["cab", "merlot", "zin"])
+#else
+     #set ($abc="nothing")
+#end
+

@@ -1,0 +1,5 @@
+#include ($foo)
+#include ($foo, $bar)
+#include ("methods.txt")
+#include ("methods.txt", $baz)
+#include ("methods.txt", "classes.txt", "one.gif")

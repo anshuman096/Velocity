@@ -1,0 +1,98 @@
+#if($server_conf=="Server")
+  #if($peer_key != "")
+     #if($version != "none" and $version != "None")
+        #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp server $server_ip key $peer_key version $version prefer
+        #else 
+         ntp server $server_ip key $peer_key version $version
+        #end
+     #else
+        #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp server $server_ip key $peer_key prefer
+        #else 
+          ntp server $server_ip key $peer_key
+        #end
+     #end
+  #else
+
+     #if($version != "none" and $version != "None")
+        #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp server $server_ip  version $version prefer
+        #else 
+          ntp server $server_ip version $version
+        #end
+     #else
+        #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp server $server_ip  prefer
+        #else 
+          ntp server $server_ip
+        #end
+     #end
+
+  #end
+#else
+
+   #if($peer_key != "")
+     #if($version  != "none" and $version != "None")
+      #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp peer $server_ip key $peer_key normal-sync version $version prefer
+      #else 
+          ntp peer $server_ip key $peer_key normal-sync version $version
+     #end
+    #else
+      #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp peer $server_ip key $peer_key normal-sync prefer
+      #else 
+         ntp peer $server_ip key $peer_key normal-sync
+     #end
+   #end
+ #else
+
+     #if($version  != "none" and $version != "None")
+      #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp peer $server_ip version $version prefer
+      #else 
+          ntp peer $server_ip version $version
+     #end
+    #else
+      #if($isPreferred  != "" && $isPreferred  != "No")
+          ntp peer $server_ip  prefer
+      #else 
+         ntp peer $server_ip 
+     #end
+   #end
+
+ #end
+
+#end
+
+#if($enableAuthentication  != "none")
+      #if($enableAuthentication  == "Enable")
+         ntp authenticate
+         #if($auth_key  != "")
+         #if($md5Number  != "")
+         ntp authentication-key $auth_key md5 $md5Number
+         #end
+         #end
+      #else 
+         no ntp authenticate
+         #if($auth_key  != "")
+         #if($md5Number  != "")
+         no ntp authentication-key $auth_key md5 $md5Number
+         #end
+         #end
+      #end
+
+#end
+
+#if($trusted_key != "")
+    ntp trusted-key $trusted_key
+#end
+
+#if($accessType  != "none")
+  #if($aclNumber  != "")
+  ntp access-group $accessType $aclNumber
+  #end
+#end
+
+

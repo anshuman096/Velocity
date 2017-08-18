@@ -1,0 +1,9 @@
+
+aaa new-model
+aaa server radius dynamic-author
+client ${ipaddress}
+server-key ${server-key}
+port ${port}
+auth-type ${authtype}
+			
+

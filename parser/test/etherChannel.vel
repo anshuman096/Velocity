@@ -1,0 +1,27 @@
+#set($valueOfChar= "-")
+
+#if($interfaceName.indexOf($valueOfChar)== -1) 
+ interface $interfaceName
+#else 
+ interface range $interfaceName
+#end
+#if($configureInterfacesAs == "access")
+switchport mode access 
+switchport access vlan $vlanId
+#else 
+switchport mode trunk
+#end
+
+channel-group $channel_group_number mode $mode
+
+no shut
+
+
+
+
+
+
+
+
+
+

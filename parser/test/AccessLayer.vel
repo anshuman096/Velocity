@@ -1,0 +1,261 @@
+
+
+#if($family_value eq "[Cisco Catalyst 3560-X Series Switches]")
+#INTERACTIVE
+macro name AccessEdgeQoS<IQ>Enter macro<R><MLTCMD>auto qos voip cisco-phone
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#INTERACTIVE
+macro name EgressQoS<IQ>Enter macro<R><MLTCMD>mls qos trust dscp
+queue-set 2
+srr-queue bandwidth share 1 30 35 5
+priority-queue out
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#end
+#if(${switchnumber} != "")
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.1208]" or ${sys_oid} eq "[1.3.6.1.4.1.9.1.516]")	
+#INTERACTIVE
+ switch ${switchnumber} priority 15<IQ>Changing the<R>s
+#ENDS_INTERACTIVE
+stack-mac persistent timer 0
+#INTERACTIVE	
+macro name AccessEdgeQoS<IQ>Enter macro<R><MLTCMD>auto qos voip cisco-phone
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#INTERACTIVE	
+macro name EgressQoS<IQ>Enter macro<R><MLTCMD>mls qos trust dscp
+queue-set 2
+srr-queue bandwidth share 1 30 35 5
+priority-queue out
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#end
+#end
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.874]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.875]" ||${sys_oid} eq  "[1.3.6.1.4.1.9.1.876]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1286]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.877]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1287]" )	
+class-map match-all VOIP_DATA_CLASS
+match cos 5
+class-map match-all VOIP_SIGNAL_CLASS
+match cos 3
+policy-map CISCOPHONE-POLICY
+class VOIP_DATA_CLASS
+set dscp ef
+police 128k bc 8000
+conform-action transmit
+exceed-action drop
+class VOIP_SIGNAL_CLASS
+set dscp cs3
+police 32k bc 8000
+conform-action transmit
+exceed-action drop
+class class-default
+set dscp default
+police 10m bc 8000
+conform-action transmit
+exceed-action set-dscp-transmit cs1
+class-map match-any PRIORITY-QUEUE
+match dscp ef
+match dscp cs5
+match dscp cs4
+class-map match-any CONTROL-MGMT-QUEUE
+match dscp cs7
+match dscp cs6
+match dscp cs3
+match dscp cs2
+class-map match-any MULTIMEDIA-CONFERENCING-QUEUE
+match dscp af41 af42 af43
+class-map match-any MULTIMEDIA-STREAMING-QUEUE
+match dscp af31 af32 af33
+class-map match-any TRANSACTIONAL-DATA-QUEUE
+match dscp af21 af22 af23
+class-map match-any BULK-DATA-QUEUE
+match dscp af11 af12 af13
+class-map match-any SCAVENGER-QUEUE
+match dscp cs1
+policy-map 1P7Q1T
+class PRIORITY-QUEUE
+priority
+class CONTROL-MGMT-QUEUE
+bandwidth remaining percent 10
+class MULTIMEDIA-CONFERENCING-QUEUE
+bandwidth remaining percent 10
+class MULTIMEDIA-STREAMING-QUEUE
+bandwidth remaining percent 10
+class TRANSACTIONAL-DATA-QUEUE
+bandwidth remaining percent 10
+dbl
+class BULK-DATA-QUEUE
+bandwidth remaining percent 4
+dbl
+class SCAVENGER-QUEUE
+bandwidth remaining percent 1
+class class-default
+bandwidth remaining percent 25
+dbl
+#INTERACTIVE	
+macro name AccessEdgeQoS<IQ>Enter macro<R><MLTCMD>qos trust device cisco-phone
+service-policy input CISCOPHONE-POLICY
+service-policy output 1P7Q1T
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#INTERACTIVE	
+macro name EgressQoS<IQ>Enter macro<R><MLTCMD>service-policy output 1P7Q1T
+@</MLTCMD>
+#ENDS_INTERACTIVE
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.1286]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1287]" )	
+redundancy 
+mode sso
+#end
+#end
+#if(${hostname} != "" and ${domainname} != "" and ${snmpserverreadstring} != "" and ${snmpreadwritestring} != "" and ${usernameadminpassword} != "" and ${ipddressradiushost} != "" and ${usernameadminpassword} != "" and ${radiusserverkey} != "" and ${ntpserver} != "" and ${timezone} != "" and ${hoursOffset} != "" and ${minutesOffset} != "" and ${PDT} != "")
+hostname ${hostname}
+vtp mode transparent
+spanning-tree mode rapid-pvst
+udld enable
+port-channel load-balance src-dst-ip
+ip domain-name ${domainname}
+ip ssh version 2
+no ip http server
+ip http secure-server
+line vty 0 15
+transport input ssh
+snmp-server community ${snmpserverreadstring} RO
+snmp-server community ${snmpreadwritestring} RW
+enable secret ${enablesecretpassword}
+service password-encryption
+username admin password ${usernameadminpassword}
+aaa new-model
+aaa authentication login default group tacacs+ local
+aaa authorization exec default group tacacs+ local
+aaa authorization console
+ip http authentication aaa
+tacacs-server host ${ipddressradiushost} key ${radiusserverkey}
+ntp server ${ntpserver}
+#if(${family_value} eq "[Cisco Catalyst 4500 Series Switches]")
+ntp update-calendar
+#end
+Clock timezone ${timezone} ${hoursOffset} ${minutesOffset}
+Clock summer-time ${PDT} recurring
+Service timestamps debug datetime msec localtime
+Service timestamps log datetime msec localtime
+#end
+#if(${voiceVlan} != "" and ${dataVlan} != "" and ${managementvlan} != "" and ${ipaddress} != "" and ${subnetmask} != "" and ${defaultrouter} != "")
+#if((${family_value} eq "[Cisco Catalyst 4500 Series Switches]") || (${family_value} eq "[Cisco Catalyst 2960 Series Switches]") || (${family_value} eq "[Cisco Catalyst 3750-X Series Switches]") || (${family_value} eq "[Cisco Catalyst 3560-X Series Switches]"))
+vlan ${voiceVlan}
+vlan ${dataVlan}
+vlan ${managementvlan}
+interface vlan ${managementvlan}
+ip address ${ipaddress} ${subnetmask}
+no shutdown
+#if($family_value eq "[Cisco Catalyst 4500 Series Switches]")
+ip route 0.0.0.0 0.0.0.0 ${defaultrouter}
+#end
+#if((${family_value} eq "[Cisco Catalyst 2960 Series Switches]") || (${family_value} eq "[Cisco Catalyst 3750-X Series Switches]") || (${family_value} eq "[Cisco Catalyst 3560-X Series Switches]"))
+ip default-gateway ${defaultrouter}
+#end
+ip dhcp snooping vlan ${dataVlan}
+ip dhcp snooping vlan ${voiceVlan}
+no ip dhcp snooping information option
+ip dhcp snooping
+ip arp inspection vlan ${dataVlan}
+ip arp inspection vlan ${voiceVlan}
+#end
+#end
+#if(${interfaceType} != "" and ${port1} != "" and ${port2} != "" and ${dataVlan} != "" and ${voiceVlan} != "" )
+#if((${family_value} eq "[Cisco Catalyst 2960 Series Switches]") || (${family_value} eq "[Cisco Catalyst 3750-X Series Switches]") || (${family_value} eq "[Cisco Catalyst 3560-X Series Switches]") || (${family_value} eq "[Cisco Catalyst 4500 Series Switches]"))
+interface range ${interfaceType} ${port1} - ${port2}
+switchport access vlan ${dataVlan}
+switchport mode access
+switchport voice vlan ${voiceVlan}
+switchport host
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.874]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.875]" ||${sys_oid} eq  "[1.3.6.1.4.1.9.1.876]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1286]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.877]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1287]" )	
+macro apply AccessEdgeQoS
+#end
+switchport port-security maximum 11
+switchport port-security
+switchport port-security aging time 2
+switchport port-security aging type inactivity
+switchport port-security violation restrict
+ip arp inspection limit rate 100
+ip dhcp snooping limit rate 100
+#if((${family_value} eq "[Cisco Catalyst 2960 Series Switches]") || (${family_value} eq "[Cisco Catalyst 3750-X Series Switches]") || (${family_value} eq "[Cisco Catalyst 3560-X Series Switches]"))
+ip verify source
+#end
+#if(${family_value} eq "[Cisco Catalyst 4500 Series Switches]")
+ip verify source vlan dhcp-snooping
+#end
+spanning-tree bpduguard enable
+#end
+#end
+#if(${interfaceTypeRange2} != "" and ${port12} != "" and ${port22} != "" and ${channelGroupNumber} != "" and ${unusedVLAN} != "" and ${dataVlan} != "" and ${voiceVlan} != "" and ${managementvlan} != "")
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.1208]")
+interface range ${interfaceTypeRange2} ${port12}, ${interfaceTypeRange2} ${port22}
+macro apply EgressQoS
+#if(${distribution_wan} eq "Distribution Connect")
+channel-protocol lacp
+channel-group ${channelGroupNumber} mode active
+#end
+#if(${distribution_wan} eq "WAN Router Connect")
+channel-group ${channelGroupNumber} mode on
+#end
+interface Port-Channel ${channelGroupNumber}
+switchport trunk native vlan ${unusedVLAN}
+switchport trunk allowed vlan ${dataVlan}
+switchport trunk allowed vlan ${voiceVlan}
+switchport trunk allowed vlan ${managementvlan}
+switchport mode trunk
+ip arp inspection trust
+ip dhcp snooping trust
+no shutdown
+#end
+#end
+#if(${interfaceTypeRange2} != "" and ${port12} != "" and ${port22} != "" and ${channelGroupNumber} != "" and ${unusedVLAN} != "" and ${dataVlan} != "" and ${voiceVlan} != "" and ${managementvlan} != "")
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.516]" || ${family_value} eq "[Cisco Catalyst 3560-X Series Switches]")
+interface range ${interfaceTypeRange2} ${port12}, ${interfaceTypeRange2} ${port22}
+switchport
+macro apply EgressQoS
+#if( ${distribution_wan} eq "Distribution Connect")
+channel-group ${channelGroupNumber} mode on
+#end
+#if( ${distribution_wan} eq "WAN Router Connect")
+channel-protocol lacp
+channel-group ${channelGroupNumber} mode active
+#end
+interface Port-Channel ${channelGroupNumber}
+switchport trunk encapsulation dot1q
+switchport trunk native vlan ${unusedVLAN}
+switchport trunk allowed vlan ${dataVlan}
+switchport trunk allowed vlan ${voiceVlan}
+switchport trunk allowed vlan ${managementvlan}
+switchport mode trunk
+ip arp inspection trust
+ip dhcp snooping trust
+no shutdown
+#end
+#end
+#if(${interfaceTypeRange2} != "" and ${port12} != "" and ${port22} != "" and ${channelGroupNumber} != "" and ${unusedVLAN} != "" and ${dataVlan} != "" and ${voiceVlan} != "" and ${managementvlan} != "")
+#if(${sys_oid} eq "[1.3.6.1.4.1.9.1.874]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.875]" ||${sys_oid} eq  "[1.3.6.1.4.1.9.1.876]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1286]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.877]" || ${sys_oid} eq "[1.3.6.1.4.1.9.1.1287]" )
+interface range ${interfaceTypeRange2} ${port12}, ${interfaceTypeRange2} ${port22}
+switchport
+macro apply EgressQoS
+#if(${distribution_wan} eq "Distribution Connect")
+channel-protocol lacp
+channel-group ${channelGroupNumber} mode active
+#end
+#if(${distribution_wan} eq "WAN Router Connect")
+channel-group ${channelGroupNumber} mode on
+#end
+interface Port-Channel ${channelGroupNumber}
+switchport trunk native vlan ${unusedVLAN}
+switchport trunk allowed vlan ${dataVlan}
+switchport trunk allowed vlan ${voiceVlan}
+switchport trunk allowed vlan ${managementvlan}
+switchport mode trunk
+ip arp inspection trust
+ip dhcp snooping trust
+no shutdown
+#end
+#end
+
+
+

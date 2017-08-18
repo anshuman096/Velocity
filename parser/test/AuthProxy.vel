@@ -1,0 +1,32 @@
+
+
+#if ( ${aaanewmodel} == "Enable" )
+ aaa new-model
+#end
+#if ( ${aaaaction} == "Enable" )
+	#if ( $method1 eq "tacacs plus" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group tacacs+ group tacacs+
+	#elseif ( $method1 eq "radius" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group radius group radius
+	#elseif ( $method1 eq "tacacs plus" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group tacacs+ group radius
+	#elseif ( $method1 eq "radius" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group radius group tacacs+
+	#elseif ( $method1 eq "tacacs plus" and $method2 eq "none" )
+		aaa authorization auth-proxy default group tacacs+ 
+	#elseif ( $method1 eq "radius" and $method2 eq "none" )
+		aaa authorization auth-proxy default group radius 
+	#elseif ( $method1 eq "none" and $method2 eq "tacacs plus" )
+		aaa authorization auth-proxy default group tacacs+
+	#elseif ( $method1 eq "none" and $method2 eq "radius" )
+		aaa authorization auth-proxy default group radius
+	#end
+#elseif ( ${aaaaction} == "Disable" )
+no aaa authorization auth-proxy default 
+#end
+#if ( ${aaanewmodel} == "Disable" )
+no aaa new-model
+#end
+
+
+
