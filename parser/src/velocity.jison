@@ -102,7 +102,7 @@ PUNCT		    [!%$&+,-/:;<=>?@[\]^_`|(){}~.]
 "}"                           return 'RCURLY'
 "("                           return 'LPAR'
 ")"                           return 'RPAR'
-"@"							  return 'RATE'
+"@"			      return 'RATE'
 ","                           return 'COMMA'
 <<EOF>>                       return 'EOF'
 %%
