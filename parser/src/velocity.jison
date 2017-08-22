@@ -142,6 +142,7 @@ statement
     | define_statement 
     | set_statement 
     | if_statement
+    | if_part_stmts
     | foreach_statement 
     | code_statement
     | var 
@@ -327,16 +328,11 @@ logical_operator
 /* Production rules for Velocity IF statements. Works like a standard IF statement: IF boolStmt == true -> do something, 
    ELSEIF -> do something else
    ELSE -> do final thing */
-if_statement 
-    if_statement
-    : HASH IF LPAR bool_statements RPAR statements
-    	{
-    	    //console.log("If statement with Velocity statements afterwards");
-    	}
-    | HASH IF LPAR bool_statements RPAR if_part_stmts
-    	{
-            //console.log("If statement with Velocity elseif and else statements");
-    	}
+if_statement
+    : HASH IF LPAR bool_statements RPAR
+	{
+		//console.log("IF Statement");
+	}
     ;
     
 if_part_stmts
