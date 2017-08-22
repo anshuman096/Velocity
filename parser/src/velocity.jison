@@ -141,8 +141,7 @@ statement
     | eval_statement 
     | define_statement 
     | set_statement 
-    | if_statement 
-    | if_part_stmts
+    | if_statement
     | foreach_statement 
     | code_statement
     | var 
@@ -329,10 +328,15 @@ logical_operator
    ELSEIF -> do something else
    ELSE -> do final thing */
 if_statement 
-    : HASH IF LPAR bool_statements RPAR
-	{
-		//console.log("IF Statement");
-	}
+    if_statement
+    : HASH IF LPAR bool_statements RPAR statements
+    	{
+    	    //console.log("If statement with Velocity statements afterwards");
+    	}
+    | HASH IF LPAR bool_statements RPAR if_part_stmts
+    	{
+            //console.log("If statement with Velocity elseif and else statements");
+    	}
     ;
     
 if_part_stmts
