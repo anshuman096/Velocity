@@ -313,7 +313,7 @@ arg_statement
     ;
 
 
-/* Production rules for AND and OR boolean statements */
+/* Production rules for a boolean statement made of multiple bool_stmts */
 bool_statements
     : bool_stmt logical_operator bool_statements
     | bool_stmt
