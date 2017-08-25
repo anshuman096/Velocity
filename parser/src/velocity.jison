@@ -253,7 +253,6 @@ statement
     | define_statement 
     | set_statement 
     | if_statement 
-    | if_part_stmts
     | foreach_statement 
     | HASH ID
     | var
