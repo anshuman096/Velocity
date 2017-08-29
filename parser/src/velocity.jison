@@ -12,6 +12,7 @@ LETTER              [a-zA-Z\_\-]
 SLETTER             [a-zA-Z]
 NEWLINE             \n
 SPACE               \s
+STRING_PUNCT	    [!%$#&+,-/:;<=>?@[\]^_`|()~.]
 PUNCT		    [!%$&+,-/:;<=>?@[\]^_`|()~.]
 SPECIAL_CHAR	    [%*&+,-/:;<=>?@[\]^_`|()~.]
 
@@ -165,7 +166,7 @@ SPECIAL_CHAR	    [%*&+,-/:;<=>?@[\]^_`|()~.]
 					this.popState(); 
 					return 'SINGLEQUOTE'
 				}
-<INSTRING>(({SLETTER}|{DIGIT}|{PUNCT}|{SPACE})*) 
+<INSTRING>(({SLETTER}|{DIGIT}|{STRING_PUNCT}|{SPACE})*) 
 			        return 'STRING'
 <VELOCITY>"in"                  return 'IN'
 <VELOCITY>"and"                 return 'AND'
